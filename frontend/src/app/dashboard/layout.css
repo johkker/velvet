@@ -1,0 +1,33 @@
+/* Dashboard Layout Styles */
+
+.dashboard-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.loading-text {
+  font-size: 18px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.dashboard-layout {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+.dashboard-main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .dashboard-main {
+    padding: 16px;
+    padding-bottom: 100px; /* Space for mobile nav */
+  }
+}

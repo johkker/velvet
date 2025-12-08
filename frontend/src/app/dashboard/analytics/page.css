@@ -1,0 +1,280 @@
+.analytics-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--secondary-500);
+    margin: 0 0 0.5rem 0;
+}
+
+.period-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.period-selector button {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--neutral-600);
+    border: 1px solid var(--neutral-300);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 150ms ease;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.period-selector button:hover {
+    color: var(--neutral-900);
+    border-color: var(--secondary-500);
+}
+
+.period-selector button.active {
+    background: var(--secondary-500);
+    color: #000;
+    border-color: var(--secondary-500);
+    font-weight: 600;
+}
+
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--neutral-600);
+}
+
+.spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--neutral-300);
+    border-top-color: var(--secondary-500);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-retry {
+    margin-top: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--secondary-500);
+    color: #000;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 150ms ease;
+}
+
+.btn-retry:hover {
+    opacity: 0.9;
+}
+
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metric-card {
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--neutral-300);
+}
+
+.metric-icon {
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.metric-content h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--neutral-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.75rem 0;
+}
+
+.metric-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--neutral-900);
+    line-height: 1;
+    margin: 0 0 0.5rem 0;
+}
+
+.metric-subtitle {
+    font-size: 0.875rem;
+    color: var(--secondary-600);
+    font-weight: 500;
+}
+
+.boost-impact-section {
+    margin-bottom: 2rem;
+    padding: 2rem;
+    border: 2px solid var(--secondary-500);
+    border-radius: 0.75rem;
+    background: var(--secondary-50);
+}
+
+.boost-impact-section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--secondary-700);
+    margin: 0 0 1.5rem 0;
+}
+
+.boost-impact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.impact-card {
+    text-align: center;
+}
+
+.impact-label {
+    font-size: 0.75rem;
+    color: var(--neutral-600);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.impact-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--neutral-900);
+}
+
+.impact-value.highlight {
+    font-size: 3rem;
+    color: var(--secondary-600);
+}
+
+.chart-section,
+.interactions-section {
+    margin-bottom: 2rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--neutral-300);
+}
+
+.chart-section h2,
+.interactions-section h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--neutral-900);
+    margin: 0 0 1.5rem 0;
+}
+
+.simple-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.5rem;
+    height: 200px;
+    padding: 1rem;
+    background: var(--neutral-100);
+    border-radius: 0.5rem;
+}
+
+.chart-bar-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+}
+
+.chart-bar {
+    width: 100%;
+    min-height: 2px;
+    background: var(--secondary-500);
+    border-radius: 0.25rem 0.25rem 0 0;
+    transition: opacity 150ms ease;
+}
+
+.chart-bar:hover {
+    opacity: 0.8;
+}
+
+.chart-label {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--neutral-600);
+    font-weight: 500;
+}
+
+.interactions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.interaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid var(--neutral-300);
+}
+
+.interaction-type {
+    font-size: 1rem;
+    color: var(--neutral-700);
+    font-weight: 500;
+}
+
+.interaction-count {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary-600);
+}
+
+@media (max-width: 768px) {
+    .analytics-page {
+        padding: 1rem;
+    }
+
+    .page-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-value {
+        font-size: 2rem;
+    }
+
+    .boost-impact-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .impact-value.highlight {
+        font-size: 2rem;
+    }
+
+    .simple-chart {
+        height: 150px;
+    }
+
+    .interactions-list {
+        grid-template-columns: 1fr;
+    }
+}
