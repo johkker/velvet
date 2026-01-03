@@ -156,7 +156,7 @@
   height: 24px;
 }
 
-.boost-tiers {
+.boosts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 24px;
@@ -209,47 +209,35 @@
   letter-spacing: 0.5px;
 }
 
-.boost-card h3 {
-  margin: 0 0 8px 0;
+.boost-card h2 {
+  margin: 0 0 16px 0;
   font-size: 24px;
+  font-weight: 700;
   color: #1a1a1a;
 }
 
-.duration {
-  font-size: 14px;
-  color: #666;
-  margin: 0 0 16px 0;
-}
-
-.price-container {
-  margin: 16px 0 24px 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-}
-
-.currency {
-  font-size: 24px;
-  font-weight: 600;
-  color: #2563eb;
-  margin-top: 4px;
-}
-
-.price {
-  font-size: 48px;
+.boost-price {
+  font-size: 32px;
   font-weight: 700;
-  color: #2563eb;
+  color: #D4AF37;
+  margin: 12px 0;
   line-height: 1;
 }
 
-.features {
+.boost-duration {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px 0;
+}
+
+.boost-features {
   list-style: none;
   padding: 0;
   margin: 0 0 24px 0;
   flex: 1;
 }
 
-.features li {
+.boost-features li {
   padding: 12px 0;
   display: flex;
   align-items: flex-start;
@@ -259,22 +247,22 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
-.features li:last-child {
+.boost-features li:last-child {
   border-bottom: none;
 }
 
-.check {
+.check-icon {
   color: #10b981;
   font-weight: 700;
   font-size: 18px;
   flex-shrink: 0;
 }
 
-.purchase-button {
+.boost-button {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  color: white;
+  background: linear-gradient(135deg, #D4AF37, #c9a227);
+  color: #1a1a1a;
   border: none;
   border-radius: 12px;
   font-size: 16px;
@@ -284,15 +272,19 @@
   margin-top: auto;
 }
 
-.purchase-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+.boost-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c9a227, #b8961f);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
 }
 
-.purchase-button:disabled {
+.boost-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.price-container {
+  display: none;
 }
 
 /* Info Section */

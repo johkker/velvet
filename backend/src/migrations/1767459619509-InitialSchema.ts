@@ -1,0 +1,120 @@
+import { MigrationInterface, QueryRunner } from "typeorm";
+
+export class InitialSchema1767459619509 implements MigrationInterface {
+    name = 'InitialSchema1767459619509'
+
+    public async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."photos_status_enum" AS ENUM('PROCESSING', 'READY', 'REJECTED')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."photos" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "url" text NOT NULL, "blur_url" text, "is_main" boolean NOT NULL DEFAULT false, "status" "velvet_dev"."photos_status_enum" NOT NULL DEFAULT 'PROCESSING', "width" integer, "height" integer, "uploaded_at" TIMESTAMP NOT NULL DEFAULT now(), "talent_id" uuid, CONSTRAINT "PK_5220c45b8e32d49d767b9b3d725" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."locations_type_enum" AS ENUM('COUNTRY', 'STATE', 'CITY', 'REGION')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."locations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "type" "velvet_dev"."locations_type_enum" NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "is_metropolitan" boolean, "code" character varying, "metadata" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "opened_at" TIMESTAMP, "closed_at" TIMESTAMP, "parent_id" uuid, CONSTRAINT "PK_7cc1c9e3853b94816c094825e74" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."invitations_status_enum" AS ENUM('PENDING', 'ACCEPTED', 'REJECTED')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."invitations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "message" text, "status" "velvet_dev"."invitations_status_enum" NOT NULL DEFAULT 'PENDING', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "establishment_id" uuid, "talent_id" uuid, CONSTRAINT "PK_5dec98cfdfd562e4ad3648bbb07" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."establishments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "slug" character varying NOT NULL, "address" text, "city" character varying, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, CONSTRAINT "UQ_c2b80fa997e89d62585dc31d0e3" UNIQUE ("slug"), CONSTRAINT "REL_0477b8280db47eaa85ddb7f48e" UNIQUE ("user_id"), CONSTRAINT "PK_7fb6da6c365114ccb61b091bbdf" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."payments_status_enum" AS ENUM('CREATED', 'PENDING', 'COMPLETED', 'FAILED')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "boost_id" uuid, "provider" character varying(64) NOT NULL, "provider_payment_id" character varying(255), "amount_cents" bigint NOT NULL, "currency" character varying(8) NOT NULL DEFAULT 'BRL', "status" "velvet_dev"."payments_status_enum" NOT NULL, "metadata" jsonb NOT NULL DEFAULT '{}', "billing_id" character varying, "pix_qr_code" text, "pix_qr_code_base64" text, "payment_url" character varying, "expires_at" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."boosts_type_enum" AS ENUM('TALENT', 'ESTABLISHMENT')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."boosts_status_enum" AS ENUM('PENDING', 'ACTIVE', 'EXPIRED', 'CANCELLED')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."boosts" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "type" "velvet_dev"."boosts_type_enum" NOT NULL DEFAULT 'TALENT', "start_at" TIMESTAMP WITH TIME ZONE, "end_at" TIMESTAMP WITH TIME ZONE, "duration_days" integer, "payment_id" uuid, "status" "velvet_dev"."boosts_status_enum" NOT NULL DEFAULT 'PENDING', "created_at" TIMESTAMP NOT NULL DEFAULT now(), "talent_id" uuid, "establishment_id" uuid, "purchased_by_establishment_id" uuid, CONSTRAINT "PK_225335d93bbce36b48152a26b48" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_status_enum" AS ENUM('ONLINE', 'OFFLINE')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_hair_color_enum" AS ENUM('Blonde', 'Brunette', 'Red', 'Black', 'Gray', 'Other')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_eye_color_enum" AS ENUM('Blue', 'Brown', 'Green', 'Hazel', 'Gray', 'Other')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_body_type_enum" AS ENUM('Slim', 'Athletic', 'Curvy', 'Average', 'Plus Size')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_skin_tone_enum" AS ENUM('Fair', 'Medium', 'Olive', 'Tan', 'Dark')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."talents_ethnicity_enum" AS ENUM('White', 'Black', 'Asian', 'Latina', 'Mixed', 'Other')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."talents" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "slug" character varying NOT NULL, "display_name" character varying NOT NULL, "bio" text, "age" smallint, "services" text array NOT NULL DEFAULT '{}', "price_min" integer, "status" "velvet_dev"."talents_status_enum" NOT NULL DEFAULT 'OFFLINE', "is_boosted" boolean NOT NULL DEFAULT false, "is_verified" boolean NOT NULL DEFAULT false, "hair_color" "velvet_dev"."talents_hair_color_enum", "eye_color" "velvet_dev"."talents_eye_color_enum", "body_type" "velvet_dev"."talents_body_type_enum", "height" smallint, "skin_tone" "velvet_dev"."talents_skin_tone_enum", "ethnicity" "velvet_dev"."talents_ethnicity_enum", "measurements" character varying, "weight" smallint, "tattoos" boolean NOT NULL DEFAULT false, "piercings" boolean NOT NULL DEFAULT false, "languages" text array NOT NULL DEFAULT '{}', "availability" character varying, "outcall" boolean NOT NULL DEFAULT false, "incall" boolean NOT NULL DEFAULT false, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, "location_id" uuid, CONSTRAINT "UQ_5064739f1d41c46004fdf648e12" UNIQUE ("slug"), CONSTRAINT "REL_00e580ce176f1118857d1e8a96" UNIQUE ("user_id"), CONSTRAINT "PK_8cecf07c0d624cc503d6a36df52" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."users_role_enum" AS ENUM('TALENT', 'ESTABLISHMENT', 'ADMIN')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying NOT NULL, "password_hash" character varying NOT NULL, "role" "velvet_dev"."users_role_enum" NOT NULL, "is_active" boolean NOT NULL DEFAULT true, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."sessions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "refresh_token_hash" character varying NOT NULL, "user_agent" text, "ip_address" character varying(64), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "expires_at" TIMESTAMP WITH TIME ZONE NOT NULL, "user_id" uuid, CONSTRAINT "PK_3238ef96f18b355b671619111bc" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."search_impressions_profile_type_enum" AS ENUM('TALENT', 'ESTABLISHMENT')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."search_impressions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_type" "velvet_dev"."search_impressions_profile_type_enum" NOT NULL, "profile_id" uuid NOT NULL, "search_query" character varying, "position" integer, "page" integer NOT NULL DEFAULT '1', "session_id" character varying, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_4060c586d5353253d2f8bc8dfc9" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_515a6508e118f3e01ccd841484" ON "velvet_dev"."search_impressions" ("created_at") `);
+        await queryRunner.query(`CREATE INDEX "IDX_47062fdbb55ebf2724e93caeb9" ON "velvet_dev"."search_impressions" ("profile_type", "profile_id") `);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."profile_views_profile_type_enum" AS ENUM('TALENT', 'ESTABLISHMENT')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."profile_views_device_type_enum" AS ENUM('desktop', 'mobile', 'tablet')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."profile_views" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_type" "velvet_dev"."profile_views_profile_type_enum" NOT NULL, "profile_id" uuid NOT NULL, "session_id" character varying, "user_id" uuid, "ip_address" character varying(45), "user_agent" text, "referrer" character varying, "device_type" "velvet_dev"."profile_views_device_type_enum", "viewed_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_d097089dc034d5c56a396ae2fd2" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_8d766450cdbcf4474b6fc2f110" ON "velvet_dev"."profile_views" ("viewed_at") `);
+        await queryRunner.query(`CREATE INDEX "IDX_dc6354b8fa481859a6d0432755" ON "velvet_dev"."profile_views" ("session_id") `);
+        await queryRunner.query(`CREATE INDEX "IDX_a3fe0a8a0df8229e34dcd16f47" ON "velvet_dev"."profile_views" ("profile_type", "profile_id") `);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."profile_interactions_profile_type_enum" AS ENUM('TALENT', 'ESTABLISHMENT')`);
+        await queryRunner.query(`CREATE TYPE "velvet_dev"."profile_interactions_interaction_type_enum" AS ENUM('CONTACT_CLICK', 'PHONE_REVEAL', 'WHATSAPP_CLICK', 'INVITE_CLICK', 'EMAIL_CLICK')`);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."profile_interactions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "profile_type" "velvet_dev"."profile_interactions_profile_type_enum" NOT NULL, "profile_id" uuid NOT NULL, "interaction_type" "velvet_dev"."profile_interactions_interaction_type_enum" NOT NULL, "session_id" character varying, "user_id" uuid, "metadata" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_f045323fdc1ca90ece1b3f6e124" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE INDEX "IDX_9b6b5318971f6a687549754366" ON "velvet_dev"."profile_interactions" ("created_at") `);
+        await queryRunner.query(`CREATE INDEX "IDX_64a188625de4440064b2c5692a" ON "velvet_dev"."profile_interactions" ("interaction_type") `);
+        await queryRunner.query(`CREATE INDEX "IDX_6fcf567da1261f86d577e97e5e" ON "velvet_dev"."profile_interactions" ("profile_type", "profile_id") `);
+        await queryRunner.query(`CREATE TABLE "velvet_dev"."audit_logs" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "action" character varying(128), "resource_type" character varying(64), "resource_id" uuid, "payload" jsonb, "created_at" TIMESTAMP NOT NULL DEFAULT now(), "user_id" uuid, CONSTRAINT "PK_1bb179d048bbc581caa3b013439" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."photos" ADD CONSTRAINT "FK_cea13eddf7f1fa74d2de2ca139a" FOREIGN KEY ("talent_id") REFERENCES "velvet_dev"."talents"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."locations" ADD CONSTRAINT "FK_ce8370570fc9bb582e9510b94a0" FOREIGN KEY ("parent_id") REFERENCES "velvet_dev"."locations"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."invitations" ADD CONSTRAINT "FK_7ca7c0defb01de3653cc811b384" FOREIGN KEY ("establishment_id") REFERENCES "velvet_dev"."establishments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."invitations" ADD CONSTRAINT "FK_d2eec39810cf3f2c73740d9df3c" FOREIGN KEY ("talent_id") REFERENCES "velvet_dev"."talents"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."establishments" ADD CONSTRAINT "FK_0477b8280db47eaa85ddb7f48e7" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."payments" ADD CONSTRAINT "FK_0c2a555bc0ab02a92ec212b18ca" FOREIGN KEY ("boost_id") REFERENCES "velvet_dev"."boosts"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" ADD CONSTRAINT "FK_1e834d0bce64aee43ea4f82ec94" FOREIGN KEY ("talent_id") REFERENCES "velvet_dev"."talents"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" ADD CONSTRAINT "FK_6bff1f21b2cac5fdc9bed4dfee6" FOREIGN KEY ("establishment_id") REFERENCES "velvet_dev"."establishments"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" ADD CONSTRAINT "FK_8980732dd4421b08a89b6e3c356" FOREIGN KEY ("purchased_by_establishment_id") REFERENCES "velvet_dev"."establishments"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."talents" ADD CONSTRAINT "FK_00e580ce176f1118857d1e8a964" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."talents" ADD CONSTRAINT "FK_d1b219e487c3f53e9897b400efb" FOREIGN KEY ("location_id") REFERENCES "velvet_dev"."locations"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."sessions" ADD CONSTRAINT "FK_085d540d9f418cfbdc7bd55bb19" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."profile_views" ADD CONSTRAINT "FK_ce52459b01be335d634f078df9b" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."profile_interactions" ADD CONSTRAINT "FK_40650a7861bcfb56097a880cfab" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."audit_logs" ADD CONSTRAINT "FK_bd2726fd31b35443f2245b93ba0" FOREIGN KEY ("user_id") REFERENCES "velvet_dev"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+    }
+
+    public async down(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."audit_logs" DROP CONSTRAINT "FK_bd2726fd31b35443f2245b93ba0"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."profile_interactions" DROP CONSTRAINT "FK_40650a7861bcfb56097a880cfab"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."profile_views" DROP CONSTRAINT "FK_ce52459b01be335d634f078df9b"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."sessions" DROP CONSTRAINT "FK_085d540d9f418cfbdc7bd55bb19"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."talents" DROP CONSTRAINT "FK_d1b219e487c3f53e9897b400efb"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."talents" DROP CONSTRAINT "FK_00e580ce176f1118857d1e8a964"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" DROP CONSTRAINT "FK_8980732dd4421b08a89b6e3c356"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" DROP CONSTRAINT "FK_6bff1f21b2cac5fdc9bed4dfee6"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."boosts" DROP CONSTRAINT "FK_1e834d0bce64aee43ea4f82ec94"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."payments" DROP CONSTRAINT "FK_0c2a555bc0ab02a92ec212b18ca"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."establishments" DROP CONSTRAINT "FK_0477b8280db47eaa85ddb7f48e7"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."invitations" DROP CONSTRAINT "FK_d2eec39810cf3f2c73740d9df3c"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."invitations" DROP CONSTRAINT "FK_7ca7c0defb01de3653cc811b384"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."locations" DROP CONSTRAINT "FK_ce8370570fc9bb582e9510b94a0"`);
+        await queryRunner.query(`ALTER TABLE "velvet_dev"."photos" DROP CONSTRAINT "FK_cea13eddf7f1fa74d2de2ca139a"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."audit_logs"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_6fcf567da1261f86d577e97e5e"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_64a188625de4440064b2c5692a"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_9b6b5318971f6a687549754366"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."profile_interactions"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."profile_interactions_interaction_type_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."profile_interactions_profile_type_enum"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_a3fe0a8a0df8229e34dcd16f47"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_dc6354b8fa481859a6d0432755"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_8d766450cdbcf4474b6fc2f110"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."profile_views"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."profile_views_device_type_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."profile_views_profile_type_enum"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_47062fdbb55ebf2724e93caeb9"`);
+        await queryRunner.query(`DROP INDEX "velvet_dev"."IDX_515a6508e118f3e01ccd841484"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."search_impressions"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."search_impressions_profile_type_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."sessions"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."users"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."users_role_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."talents"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_ethnicity_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_skin_tone_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_body_type_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_eye_color_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_hair_color_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."talents_status_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."boosts"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."boosts_status_enum"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."boosts_type_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."payments"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."payments_status_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."establishments"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."invitations"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."invitations_status_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."locations"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."locations_type_enum"`);
+        await queryRunner.query(`DROP TABLE "velvet_dev"."photos"`);
+        await queryRunner.query(`DROP TYPE "velvet_dev"."photos_status_enum"`);
+    }
+
+}

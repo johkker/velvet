@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { fetchEstablishments } from '@/lib/api';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/atoms/Card';
-import Header from '@/components/organisms/Header';
 
 interface Establishment {
   id: string;
@@ -44,10 +43,8 @@ export default function EstablishmentsPage() {
   );
 
   return (
-    <>
-      <Header />
-      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 pt-16">
-        <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 pt-16">
+      <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
             <div className="mb-8">
               <h1 className="text-3xl font-bold mb-2">Establishments</h1>
@@ -127,6 +124,5 @@ export default function EstablishmentsPage() {
           </div>
         </div>
       </div>
-    </>
-  );
-}
+    );
+  }

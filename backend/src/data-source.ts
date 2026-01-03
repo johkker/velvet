@@ -3,18 +3,14 @@ import { config } from 'dotenv';
 
 config();
 
-const sslConfig = process.env.NODE_ENV === "production"
-    ? {
-        ssl: {
-            rejectUnauthorized: true,
-        },
-    }
-    : {
-        // Configuração para Desenvolvimento/Local: ATIVA o SSL e DESATIVA a validação do certificado
-        ssl: {
-            rejectUnauthorized: false,
-        },
-    };
+// Dynamic SSL configuration based on environment variable
+const useSSL = process.env.DATABASE_SSL !== 'false';
+const sslConfig: any = {};
+if (useSSL) {
+    sslConfig.ssl = process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: true }
+        : { rejectUnauthorized: false };
+}
 
 export const AppDataSource = new DataSource({
     type: 'postgres',

@@ -95,7 +95,7 @@ export default function EstablishmentProfilePage() {
 
             <div className="profile-content">
                 <div className="profile-info-card">
-                    <h2>Informações Públicas</h2>
+                    <h3>Informações Públicas</h3>
                     <div className="info-item">
                         <span className="info-label">URL do Perfil:</span>
                         <span className="info-value">
