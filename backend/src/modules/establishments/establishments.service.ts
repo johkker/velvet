@@ -1,12 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Establishment } from './entities/establishment.entity';
 import { Invitation, InvitationStatus } from '../invitations/entities/invitation.entity';
 import { Talent } from '../talents/entities/talent.entity';
+import { User } from '../users/entities/user.entity';
+import { EmailService } from '../emails/email.service';
 
 @Injectable()
 export class EstablishmentsService {
+    private readonly logger = new Logger(EstablishmentsService.name);
+
     constructor(
         @InjectRepository(Establishment)
         private establishmentsRepository: Repository<Establishment>,
@@ -14,6 +18,9 @@ export class EstablishmentsService {
         private invitationsRepository: Repository<Invitation>,
         @InjectRepository(Talent)
         private talentsRepository: Repository<Talent>,
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
+        private emailService: EmailService,
     ) { }
 
     async findAll() {
@@ -100,7 +107,10 @@ export class EstablishmentsService {
             throw new NotFoundException('Establishment profile not found');
         }
 
-        const talent = await this.talentsRepository.findOne({ where: { id: talentId } });
+        const talent = await this.talentsRepository.findOne({ 
+            where: { id: talentId },
+            relations: ['user']
+        });
         if (!talent) {
             throw new NotFoundException('Talent not found');
         }
@@ -123,6 +133,21 @@ export class EstablishmentsService {
             message,
         });
 
-        return this.invitationsRepository.save(invitation);
+        const savedInvitation = await this.invitationsRepository.save(invitation);
+
+        // Send invitation email
+        try {
+            const invitationLink = `https://velvet.com/dashboard/invitations`;
+            await this.emailService.sendInvitationEmail(
+                talent.user.email,
+                talent.displayName,
+                establishment.name,
+                invitationLink
+            );
+        } catch (error) {
+            this.logger.warn(`Failed to send invitation email to ${talent.user.email}:`, error);
+        }
+
+        return savedInvitation;
     }
 }

@@ -27,6 +27,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { LocationsModule } from './modules/locations/locations.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { BoostHistoryModule } from './modules/boost-history/boost-history.module';
+import { EmailModule } from './modules/emails/email.module';
 
 export const sslConfig = process.env.NODE_ENV === "production"
   ? {
@@ -72,6 +73,7 @@ export const sslConfig = process.env.NODE_ENV === "production"
     LocationsModule,
     AnalyticsModule,
     BoostHistoryModule,
+    EmailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

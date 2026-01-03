@@ -404,4 +404,17 @@ export class BoostsService {
 
         return response;
     }
+
+    async findById(boostId: string): Promise<Boost> {
+        const boost = await this.boostsRepository.findOne({
+            where: { id: boostId },
+            relations: ['talent', 'talent.user', 'payment']
+        });
+
+        if (!boost) {
+            throw new NotFoundException('Boost not found');
+        }
+
+        return boost;
+    }
 }

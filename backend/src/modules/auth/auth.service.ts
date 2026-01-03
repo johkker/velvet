@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -7,10 +7,13 @@ import { User, UserRole } from '../users/entities/user.entity';
 import { Talent } from '../talents/entities/talent.entity';
 import { Establishment } from '../establishments/entities/establishment.entity';
 import { Location, LocationType } from '../locations/entities/location.entity';
+import { EmailService } from '../emails/email.service';
 import { LoginDto, RegisterTalentDto, RegisterEstablishmentDto } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         @InjectRepository(User)
         private usersRepository: Repository<User>,
@@ -21,6 +24,7 @@ export class AuthService {
         @InjectRepository(Location)
         private locationsRepository: Repository<Location>,
         private jwtService: JwtService,
+        private emailService: EmailService,
     ) { }
 
     async validateUser(email: string, pass: string): Promise<any> {
@@ -74,6 +78,17 @@ export class AuthService {
         });
         await this.talentsRepository.save(talent);
 
+        // Send welcome email
+        try {
+            await this.emailService.sendWelcomeEmail(
+                registerDto.email,
+                registerDto.displayName,
+                'TALENT'
+            );
+        } catch (error) {
+            this.logger.warn(`Failed to send welcome email to ${registerDto.email}:`, error);
+        }
+
         return this.login({ email: registerDto.email, password: registerDto.password });
     }
 
@@ -100,6 +115,17 @@ export class AuthService {
             city: registerDto.city,
         });
         await this.establishmentsRepository.save(establishment);
+
+        // Send welcome email
+        try {
+            await this.emailService.sendWelcomeEmail(
+                registerDto.email,
+                registerDto.name,
+                'ESTABLISHMENT'
+            );
+        } catch (error) {
+            this.logger.warn(`Failed to send welcome email to ${registerDto.email}:`, error);
+        }
 
         return this.login({ email: registerDto.email, password: registerDto.password });
     }

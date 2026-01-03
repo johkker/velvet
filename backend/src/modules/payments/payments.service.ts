@@ -1,17 +1,26 @@
-import { Injectable, Inject, forwardRef, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { Payment, PaymentStatus } from './entities/payment.entity';
 import { BoostsService } from '../boosts/boosts.service';
+import { EmailService } from '../emails/email.service';
 import { User } from '../users/entities/user.entity';
+import { Talent } from '../talents/entities/talent.entity';
 
 @Injectable()
 export class PaymentsService {
+    private readonly logger = new Logger(PaymentsService.name);
+
     constructor(
         @InjectRepository(Payment)
         private paymentsRepository: Repository<Payment>,
+        @InjectRepository(Talent)
+        private talentsRepository: Repository<Talent>,
+        @InjectRepository(User)
+        private usersRepository: Repository<User>,
         @Inject(forwardRef(() => BoostsService))
         private boostsService: BoostsService,
+        private emailService: EmailService,
     ) { }
 
     async createPayment(boostId: string, durationDays: number, method: string) {
@@ -84,7 +93,45 @@ export class PaymentsService {
                 payment.status = PaymentStatus.PENDING;
         }
 
-        return this.paymentsRepository.save(payment);
+        const updatedPayment = await this.paymentsRepository.save(payment);
+
+        // Send confirmation email if payment is completed
+        if (updatedPayment.status === PaymentStatus.COMPLETED && updatedPayment.boostId) {
+            try {
+                const boost = await this.boostsService.findById(updatedPayment.boostId);
+                if (boost && boost.talent && boost.talent.user && boost.endAt) {
+                    const talent = boost.talent;
+                    const user = talent.user;
+                    const amount = parseInt(updatedPayment.amountCents);
+                    const endDate = new Date(boost.endAt).toLocaleDateString('pt-BR');
+
+                    await this.emailService.sendPaymentConfirmationEmail(
+                        user.email,
+                        talent.displayName,
+                        amount,
+                        `Boost ${boost.durationDays} dias`,
+                        new Date().toLocaleDateString('pt-BR'),
+                        updatedPayment.id
+                    );
+
+                    // Also send boost activation email
+                    await this.emailService.sendBoostActivationEmail(
+                        user.email,
+                        talent.displayName,
+                        `Boost ${boost.durationDays} dias`,
+                        boost.durationDays,
+                        endDate
+                    );
+                }
+            } catch (error) {
+                this.logger.warn(
+                    `Failed to send payment/boost confirmation emails for payment ${paymentId}:`,
+                    error
+                );
+            }
+        }
+
+        return updatedPayment;
     }
 
     async findById(paymentId: string): Promise<Payment> {

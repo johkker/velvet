@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { Talent } from '../talents/entities/talent.entity';
 import { Establishment } from '../establishments/entities/establishment.entity';
 import { Location } from '../locations/entities/location.entity';
+import { EmailModule } from '../emails/email.module';
 
 @Module({
     imports: [
@@ -23,6 +24,7 @@ import { Location } from '../locations/entities/location.entity';
             }),
             inject: [ConfigService],
         }),
+        EmailModule,
     ],
     providers: [AuthService, JwtStrategy],
     controllers: [AuthController],
