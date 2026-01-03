@@ -187,12 +187,13 @@ export default function BoostsPage() {
         ))}
       </div>
 
-      <PaymentModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        paymentData={paymentData}
-        onSuccess={handleSuccess}
-      />
+      {isModalOpen && (
+        <PaymentModal
+          onClose={() => setIsModalOpen(false)}
+          paymentData={paymentData}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 }

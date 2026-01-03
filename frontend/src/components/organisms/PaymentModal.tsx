@@ -5,7 +5,6 @@ import Image from 'next/image';
 import './PaymentModal.css';
 
 interface PaymentModalProps {
-  isOpen: boolean;
   onClose: () => void;
   paymentData: {
     amount: number;
@@ -20,7 +19,6 @@ interface PaymentModalProps {
 }
 
 export default function PaymentModal({ 
-  isOpen, 
   onClose, 
   paymentData, 
   onSuccess 
@@ -29,8 +27,8 @@ export default function PaymentModal({
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!isOpen || !paymentData?.billingId) {
-      console.log('Skipping polling - no billing ID:', { isOpen, billingId: paymentData?.billingId });
+    if (!paymentData?.billingId) {
+      console.log('Skipping polling - no billing ID:', { billingId: paymentData?.billingId });
       return;
     }
 
@@ -74,7 +72,7 @@ export default function PaymentModal({
       console.log('Stopping payment polling');
       clearInterval(interval);
     };
-  }, [isOpen, paymentData?.billingId, onSuccess, onClose]);
+  }, [paymentData?.billingId, onSuccess, onClose]);
 
   const copyPixCode = () => {
     if (paymentData) {
@@ -104,7 +102,7 @@ export default function PaymentModal({
     }
   };
 
-  if (!isOpen || !paymentData) return null;
+  if (!paymentData) return null;
 
   return (
     <div className="payment-modal-overlay" onClick={onClose}>
