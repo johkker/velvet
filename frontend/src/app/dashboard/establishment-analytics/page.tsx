@@ -2,8 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/lib/toast-context';
 import { fetchManagedTalentsMetrics } from '@/lib/api';
 import { formatMetricValue, formatPercentage } from '@/lib/analytics-utils';
+import { toCSV, toJSON, getTimestampSuffix } from '@/lib/export-utils';
+import { usePolling } from '@/lib/use-polling';
 import './page.css';
 
 interface TalentMetrics {
@@ -32,30 +35,92 @@ interface ManagedTalentsMetricsData {
 
 export default function EstablishmentAnalyticsPage() {
     const { user } = useAuth();
+    const { showToast } = useToast();
     const [metrics, setMetrics] = useState<ManagedTalentsMetricsData | null>(null);
-    const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState<'views' | 'engagement' | 'interactions'>('views');
     const [filterBoosted, setFilterBoosted] = useState<'all' | 'boosted' | 'unboosted'>('all');
     const [searchTerm, setSearchTerm] = useState('');
+    const [exporting, setExporting] = useState(false);
+    const [realTimeEnabled, setRealTimeEnabled] = useState(false);
+    const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+    // Set up polling when real-time is enabled
+    const { data: polledMetrics, loading } = usePolling(
+        async () => {
+            if (!user || user.role !== 'ESTABLISHMENT') return null;
+            const response = await fetchManagedTalentsMetrics(user.id);
+            return response.data;
+        },
+        {
+            interval: 30000, // 30 seconds
+            enabled: realTimeEnabled && !!user,
+            onError: (error) => {
+                console.error('Polling error:', error);
+                showToast('Erro ao atualizar métricas em tempo real', 'error');
+            }
+        }
+    );
+
+    // Update metrics when polled data changes
+    useEffect(() => {
+        if (polledMetrics) {
+            setMetrics(polledMetrics);
+            setLastUpdated(new Date());
+        }
+    }, [polledMetrics]);
+
+    // Initial load
     useEffect(() => {
         loadMetrics();
     }, [user]);
 
     async function loadMetrics() {
         if (!user || user.role !== 'ESTABLISHMENT') {
-            setLoading(false);
             return;
         }
 
-        setLoading(true);
         try {
             const response = await fetchManagedTalentsMetrics(user.id);
             setMetrics(response.data);
+            setLastUpdated(new Date());
+            showToast('Métricas carregadas com sucesso', 'success');
         } catch (error) {
             console.error('Error fetching managed talents metrics:', error);
+            showToast('Erro ao carregar métricas', 'error');
+        }
+    }
+
+    async function handleExport(format: 'csv' | 'json') {
+        if (!metrics) return;
+
+        setExporting(true);
+        try {
+            const exportData = metrics.talentMetrics.map(talent => ({
+                'Talento': talent.talentName,
+                'Slug': talent.slug,
+                'Visualizações': talent.profileViews.total,
+                'Visitantes Únicos': talent.profileViews.unique,
+                'Interações': talent.interactions.total,
+                'Cliques no Contato': talent.interactions.contactClicks,
+                'Taxa de Engajamento (%)': (talent.engagementRate * 100).toFixed(2),
+                'Status': talent.isBoosted ? 'Impulsionado' : 'Normal',
+            }));
+
+            const timestamp = getTimestampSuffix();
+            const filename = `metricas-talentos${timestamp}.${format}`;
+
+            if (format === 'csv') {
+                toCSV(exportData, filename);
+            } else {
+                toJSON(exportData, filename);
+            }
+
+            showToast(`Dados exportados como ${format.toUpperCase()}`, 'success');
+        } catch (error) {
+            console.error('Export error:', error);
+            showToast('Erro ao exportar dados', 'error');
         } finally {
-            setLoading(false);
+            setExporting(false);
         }
     }
 
@@ -120,8 +185,25 @@ export default function EstablishmentAnalyticsPage() {
     return (
         <div className="establishment-analytics-page">
             <div className="page-header">
-                <h1>Métricas dos Talentos</h1>
-                <p>Acompanhe o desempenho de todos os talentos do seu estabelecimento</p>
+                <div className="header-content">
+                    <h1>Métricas dos Talentos</h1>
+                    <p>Acompanhe o desempenho de todos os talentos do seu estabelecimento</p>
+                </div>
+                <div className="header-controls">
+                    <button 
+                        className={`realtime-toggle ${realTimeEnabled ? 'active' : ''}`}
+                        onClick={() => setRealTimeEnabled(!realTimeEnabled)}
+                        title={realTimeEnabled ? 'Desativar atualizações em tempo real' : 'Ativar atualizações em tempo real'}
+                    >
+                        <span className="toggle-icon">{realTimeEnabled ? '🔴' : '⚪'}</span>
+                        {realTimeEnabled ? 'Ao Vivo' : 'Manual'}
+                    </button>
+                    {lastUpdated && (
+                        <div className="last-updated">
+                            Atualizado: {lastUpdated.toLocaleTimeString('pt-BR')}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Summary Cards */}
@@ -244,12 +326,27 @@ export default function EstablishmentAnalyticsPage() {
 
             {/* Action Bar */}
             <div className="action-bar">
-                <button onClick={loadMetrics} className="btn-refresh">
+                <button onClick={loadMetrics} className="btn-refresh" disabled={loading}>
                     🔄 Atualizar Dados
                 </button>
-                <button className="btn-export">
-                    📥 Exportar CSV
-                </button>
+                <div className="export-buttons">
+                    <button 
+                        onClick={() => handleExport('csv')} 
+                        className="btn-export"
+                        disabled={exporting || !metrics}
+                        title="Exportar como CSV"
+                    >
+                        📥 CSV
+                    </button>
+                    <button 
+                        onClick={() => handleExport('json')} 
+                        className="btn-export"
+                        disabled={exporting || !metrics}
+                        title="Exportar como JSON"
+                    >
+                        📋 JSON
+                    </button>
+                </div>
             </div>
         </div>
     );
