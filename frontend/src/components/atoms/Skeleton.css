@@ -1,0 +1,77 @@
+.skeleton {
+    background: linear-gradient(
+        90deg,
+        var(--color-bg-primary) 25%,
+        var(--color-border) 50%,
+        var(--color-bg-primary) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-text {
+    height: 16px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.skeleton-text:last-child {
+    margin-bottom: 0;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-card {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.skeleton-content {
+    flex: 1;
+}
+
+.skeleton-table {
+    width: 100%;
+}
+
+.skeleton-table-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    padding: 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.skeleton-table-row .skeleton {
+    height: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .skeleton-card {
+        flex-direction: column;
+    }
+
+    .skeleton-table-row {
+        grid-template-columns: 1fr;
+    }
+}

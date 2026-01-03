@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import { LocationProvider } from "@/lib/location-context";
+import { ToastProvider } from "@/lib/toast-context";
 import { LocationPermissionModal } from "@/components/organisms/LocationPermissionModal";
 import Header from "@/components/organisms/Header";
 
@@ -35,9 +36,11 @@ export default function RootLayout({
       >
         <AuthProvider>
           <LocationProvider>
-            <Header />
-            {children}
-            <LocationPermissionModal />
+            <ToastProvider>
+              <Header />
+              {children}
+              <LocationPermissionModal />
+            </ToastProvider>
           </LocationProvider>
         </AuthProvider>
       </body>
