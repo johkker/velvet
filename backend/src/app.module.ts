@@ -29,19 +29,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { BoostHistoryModule } from './modules/boost-history/boost-history.module';
 import { EmailModule } from './modules/emails/email.module';
 
-export const sslConfig = process.env.NODE_ENV === "production"
-  ? {
-    ssl: {
-      rejectUnauthorized: true,
-    },
-  }
-  : {
-    // Configuração para Desenvolvimento/Local: ATIVA o SSL e DESATIVA a validação do certificado
-    ssl: {
-      rejectUnauthorized: false,
-    },
-  };
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -49,17 +36,30 @@ export const sslConfig = process.env.NODE_ENV === "production"
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        ...sslConfig,
-        url: configService.get('DATABASE_URL'),
-        schema: configService.get('DATABASE_SCHEMA'),
-        entities: [User, Talent, Establishment, Photo, Invitation, Boost, Payment, Session, AuditLog, Location, ProfileView, ProfileInteraction, SearchImpression],
-        synchronize: false, // Use migrations instead
-        logging: true,
-        migrationsRun: true, // Auto-run migrations on startup
-        migrations: ['dist/migrations/**/*.js'],
-      }),
+      useFactory: (configService: ConfigService) => {
+        // Dynamic SSL configuration based on environment variable
+        const useSSL = configService.get<string>('DATABASE_SSL', 'true').toLowerCase() === 'true';
+        
+        const config: any = {
+          type: 'postgres',
+          url: configService.get('DATABASE_URL'),
+          schema: configService.get('DATABASE_SCHEMA'),
+          entities: [User, Talent, Establishment, Photo, Invitation, Boost, Payment, Session, AuditLog, Location, ProfileView, ProfileInteraction, SearchImpression],
+          synchronize: false, // Use migrations instead
+          logging: true,
+          migrationsRun: true, // Auto-run migrations on startup
+          migrations: ['dist/migrations/**/*.js'],
+        };
+
+        // Add SSL config only if enabled
+        if (useSSL) {
+          config.ssl = process.env.NODE_ENV === 'production'
+            ? { rejectUnauthorized: true }
+            : { rejectUnauthorized: false };
+        }
+
+        return config;
+      },
       inject: [ConfigService],
     }),
     AuthModule,

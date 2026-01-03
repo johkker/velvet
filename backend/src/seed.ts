@@ -11,9 +11,17 @@ import { AuditLog } from './modules/audit/entities/audit-log.entity';
 import { Location, LocationType } from './modules/locations/entities/location.entity';
 import * as bcrypt from 'bcrypt';
 import * as dotenv from 'dotenv';
-import { sslConfig } from './app.module';
 
 dotenv.config();
+
+// Dynamic SSL configuration
+const useSSL = process.env.DATABASE_SSL !== 'false';
+const sslConfig: any = {};
+if (useSSL) {
+    sslConfig.ssl = process.env.NODE_ENV === 'production'
+        ? { rejectUnauthorized: true }
+        : { rejectUnauthorized: false };
+}
 
 const AppDataSource = new DataSource({
     type: 'postgres',
