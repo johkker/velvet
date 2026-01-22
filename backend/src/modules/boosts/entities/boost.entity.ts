@@ -12,7 +12,8 @@ export enum BoostStatus {
 
 export enum BoostType {
     TALENT = 'TALENT',
-    ESTABLISHMENT = 'ESTABLISHMENT',
+    ESTABLISHMENT_PROFILE = 'ESTABLISHMENT_PROFILE',
+    TALENT_BULK = 'TALENT_BULK',
 }
 
 @Entity('boosts')
@@ -60,6 +61,15 @@ export class Boost {
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
+
+    @Column({ name: 'talent_ids', type: 'jsonb', nullable: true })
+    talentIds: string[] | null;
+
+    @Column({ name: 'boost_tier', type: 'varchar', nullable: true })
+    boostTier: string | null;
+
+    @Column({ name: 'discount_percentage', type: 'int', default: 0 })
+    discountPercentage: number;
 
     @OneToMany(() => Payment, (payment) => payment.boost)
     payments: Payment[];

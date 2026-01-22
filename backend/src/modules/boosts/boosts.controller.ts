@@ -20,6 +20,12 @@ class PurchaseBoostForTalentsDto {
     boostType: string;
 }
 
+class PurchaseEstablishmentBoostDto {
+    @IsString()
+    @IsNotEmpty()
+    boostType: string;
+}
+
 @ApiTags('Boosts')
 @Controller('boosts')
 export class BoostsController {
@@ -47,6 +53,14 @@ export class BoostsController {
     @ApiOperation({ summary: 'Purchase boosts for multiple talents (establishments only)' })
     async purchaseForTalents(@Request() req, @Body() dto: PurchaseBoostForTalentsDto) {
         return this.boostsService.purchaseBoostForTalents(req.user.id, dto.talentIds, dto.boostType);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @Post('purchase-establishment')
+    @ApiBearerAuth('JWT-auth')
+    @ApiOperation({ summary: 'Purchase an establishment boost' })
+    async purchaseEstablishment(@Request() req, @Body() dto: PurchaseEstablishmentBoostDto) {
+        return this.boostsService.purchaseEstablishmentBoost(req.user.id, dto.boostType);
     }
 
     @UseGuards(JwtAuthGuard)

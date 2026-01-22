@@ -268,6 +268,21 @@ export async function createBoost(boostType: string, paymentMethod: string = 'PI
     return response.data || response;
 }
 
+export async function purchaseEstablishmentBoost(boostType: string) {
+    const res = await fetchWithAuth(`${API_URL}/boosts/purchase-establishment`, {
+        method: 'POST',
+        body: JSON.stringify({ boostType }),
+    });
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error?.message || 'Establishment boost purchase failed');
+    }
+
+    const response = await res.json();
+    return response.data || response;
+}
+
 export async function checkPaymentStatus(billingId: string) {
     const res = await fetch(`${API_URL}/payments/status/${billingId}`);
     if (!res.ok) throw new Error('Failed to check payment status');

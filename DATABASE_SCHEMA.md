@@ -132,24 +132,51 @@ CREATE INDEX idx_invitations_establishment ON invitations(establishment_id);
 CREATE INDEX idx_invitations_talent ON invitations(talent_id);
 ```
 
-## 3.6. boosts
+## 3.6. boosts (Updated with Redesign v2)
 ```sql
 CREATE TABLE boosts (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  type varchar(32) DEFAULT 'TALENT', -- TALENT|ESTABLISHMENT_PROFILE|TALENT_BULK
   talent_id uuid REFERENCES talents(id) ON DELETE CASCADE,
+  establishment_id uuid REFERENCES establishments(id) ON DELETE CASCADE,
+  purchased_by_establishment_id uuid REFERENCES establishments(id) ON DELETE SET NULL,
   start_at timestamptz,
   end_at timestamptz,
   duration_days int,
   payment_id uuid REFERENCES payments(id),
   status varchar(16) DEFAULT 'PENDING', -- PENDING|ACTIVE|EXPIRED|CANCELLED
+  talent_ids jsonb, -- For bulk boosts: array of talent IDs
+  boost_tier varchar(32), -- e.g. 'basic_3d', 'premium_7d', 'establishment_30d', 'talent_bulk_7d'
+  discount_percentage int DEFAULT 0,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX idx_boosts_talent ON boosts(talent_id);
+CREATE INDEX idx_boosts_establishment ON boosts(establishment_id);
+CREATE INDEX idx_boosts_type ON boosts(type);
 CREATE INDEX idx_boosts_status ON boosts(status);
 CREATE INDEX idx_boosts_end_at ON boosts(end_at);
 ```
 
-> Nota: `boosts.payment_id` nullable até o pagamento ser confirmado. Alternativamente, pagamentos podem referenciar boost_id.
+### Boost Types:
+- **TALENT**: Individual talent boosting own profile
+  - talent_id: NOT NULL
+  - establishment_id: NULL
+  - Durations: 3d, 7d, 30d
+  - Prices: R$ 19.90 to R$ 249.00
+
+- **ESTABLISHMENT_PROFILE**: Establishment boosting business profile
+  - talent_id: NULL
+  - establishment_id: NOT NULL
+  - Durations: 3d, 7d, 30d
+  - Prices: R$ 49.90 to R$ 623.00 (1.5-1.53x markup)
+
+- **TALENT_BULK**: Establishment boosting multiple managed talents
+  - talent_id: Individual boost records
+  - establishment_id: NULL
+  - purchased_by_establishment_id: NOT NULL (which establishment purchased)
+  - talent_ids: Array of all boosted talent IDs
+  - Durations: 3d, 7d, 30d
+  - Prices: R$ 17.90 to R$ 174.30 per talent (10-30% discounts)
 
 ## 3.7. payments
 ```sql

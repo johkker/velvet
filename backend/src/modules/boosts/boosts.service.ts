@@ -1,44 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
-import { Boost, BoostStatus } from './entities/boost.entity';
+import { Boost, BoostStatus, BoostType } from './entities/boost.entity';
 import { Talent } from '../talents/entities/talent.entity';
 import { Establishment } from '../establishments/entities/establishment.entity';
 import { Invitation, InvitationStatus } from '../invitations/entities/invitation.entity';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { AbacatePayService } from '../payments/abacate-pay.service';
 import { ConfigService } from '@nestjs/config';
-
-const BOOST_PRODUCTS = {
-    basic_3d: {
-        externalId: 'boost_basic_3d',
-        name: 'Basic Boost - 3 Days',
-        description: 'Featured profile for 3 days',
-        price: 1990, // R$ 19.90 in centavos
-        duration: 3,
-    },
-    basic_7d: {
-        externalId: 'boost_basic_7d',
-        name: 'Basic Boost - 7 Days',
-        description: 'Featured profile for 7 days',
-        price: 4900, // R$ 49.00
-        duration: 7,
-    },
-    premium_7d: {
-        externalId: 'boost_premium_7d',
-        name: 'Premium Boost - 7 Days',
-        description: 'Top position + featured for 7 days',
-        price: 7900, // R$ 79.00
-        duration: 7,
-    },
-    premium_30d: {
-        externalId: 'boost_premium_30d',
-        name: 'Premium Boost - 30 Days',
-        description: 'Top position + featured for 30 days',
-        price: 24900, // R$ 249.00
-        duration: 30,
-    },
-};
+import { BOOST_PRICING, BoostTier } from './boost.pricing';
 
 @Injectable()
 export class BoostsService {
@@ -58,7 +28,7 @@ export class BoostsService {
     ) { }
 
     async purchaseBoost(userId: string, boostType: string) {
-        const product = BOOST_PRODUCTS[boostType];
+        const product = BOOST_PRICING.TALENT[boostType];
         if (!product) {
             throw new NotFoundException('Invalid boost type');
         }
@@ -143,10 +113,12 @@ export class BoostsService {
 
         // Create boost in pending state
         const boost = this.boostsRepository.create({
+            type: BoostType.TALENT,
             talent: talent,
             durationDays: product.duration,
             status: BoostStatus.PENDING,
             paymentId: savedPayment.id,
+            boostTier: boostType,
         });
 
         await this.boostsRepository.save(boost);
@@ -210,31 +182,32 @@ export class BoostsService {
             throw new NotFoundException('Payment not found');
         }
 
-        const { talentId } = payment.metadata;
-
-        // Find boost by payment
-        const boost = await this.boostsRepository.findOne({
+        const boosts = await this.boostsRepository.find({
             where: { paymentId: payment.id },
-            relations: ['talent'],
+            relations: ['talent', 'establishment'],
         });
 
-        if (!boost) {
-            throw new NotFoundException('Boost not found');
+        if (boosts.length === 0) {
+            throw new NotFoundException('Boosts not found');
         }
 
         const now = new Date();
-        const endAt = new Date();
-        endAt.setDate(now.getDate() + boost.durationDays);
 
-        boost.status = BoostStatus.ACTIVE;
-        boost.startAt = now;
-        boost.endAt = endAt;
-        await this.boostsRepository.save(boost);
+        for (const boost of boosts) {
+            const endAt = new Date();
+            endAt.setDate(now.getDate() + boost.durationDays);
 
-        // Update talent boost status
-        await this.talentsRepository.update(talentId, { isBoosted: true });
+            boost.status = BoostStatus.ACTIVE;
+            boost.startAt = now;
+            boost.endAt = endAt;
+            await this.boostsRepository.save(boost);
 
-        return boost;
+            if (boost.talent) {
+                await this.talentsRepository.update(boost.talent.id, { isBoosted: true });
+            }
+        }
+
+        return boosts;
     }
 
     async createBoost(userId: string, durationDays: number, paymentMethod: string) {
@@ -275,7 +248,7 @@ export class BoostsService {
     }
 
     async purchaseBoostForTalents(userId: string, talentIds: string[], boostType: string) {
-        const product = BOOST_PRODUCTS[boostType];
+        const product = BOOST_PRICING.TALENT_BULK[boostType];
         if (!product) {
             throw new NotFoundException('Invalid boost type');
         }
@@ -326,7 +299,8 @@ export class BoostsService {
             }
         }
 
-        const totalAmount = product.price * talentIds.length;
+        const totalAmount = product.pricePerTalent * talentIds.length;
+        const discountPercentage = Math.round(product.discount * 100);
 
         const products = talentIds.map((talentId, index) => {
             const talent = talents.find(t => t.id === talentId);
@@ -335,7 +309,7 @@ export class BoostsService {
                 name: `${product.name} - ${talent?.displayName}`,
                 description: `Profile boost for ${talent?.displayName}`,
                 quantity: 1,
-                price: product.price,
+                price: product.pricePerTalent,
             };
         });
 
@@ -350,12 +324,13 @@ export class BoostsService {
                 userId: userId,
                 boostType: boostType,
                 talentIds: talentIds,
+                discountPercentage: discountPercentage,
             },
         });
 
         const pixQRCode = await this.abacatePayService.createPixQRCode(
             totalAmount,
-            `boost_multi_${establishment.id}_${Date.now()}`
+            `boost_bulk_${establishment.id}_${Date.now()}`
         );
 
         const payment = this.paymentsRepository.create({
@@ -373,6 +348,7 @@ export class BoostsService {
                 establishmentId: establishment.id,
                 talentIds: talentIds,
                 pixId: pixQRCode.id,
+                discountPercentage: discountPercentage,
             },
         });
 
@@ -380,11 +356,15 @@ export class BoostsService {
 
         for (const talent of talents) {
             const boost = this.boostsRepository.create({
+                type: BoostType.TALENT_BULK,
                 talent: talent,
                 purchasedByEstablishment: establishment,
                 durationDays: product.duration,
                 status: BoostStatus.PENDING,
                 paymentId: savedPayment.id,
+                talentIds: talentIds,
+                boostTier: boostType,
+                discountPercentage: discountPercentage,
             });
 
             await this.boostsRepository.save(boost);
@@ -396,6 +376,112 @@ export class BoostsService {
             pixId: pixQRCode.id,
             amount: totalAmount,
             talentCount: talentIds.length,
+            discountPercentage: discountPercentage,
+            pixQrCode: pixQRCode.brCode,
+            pixQrCodeBase64: pixQRCode.brCodeBase64,
+            paymentUrl: billing.url,
+            expiresAt: pixQRCode.expiresAt,
+        };
+
+        return response;
+    }
+
+    async purchaseEstablishmentBoost(userId: string, boostType: string) {
+        const product = BOOST_PRICING.ESTABLISHMENT_PROFILE[boostType];
+        if (!product) {
+            throw new NotFoundException('Invalid boost type');
+        }
+
+        const establishment = await this.establishmentsRepository.findOne({
+            where: { user: { id: userId } },
+            relations: ['user'],
+        });
+
+        if (!establishment) {
+            throw new NotFoundException('Establishment profile not found');
+        }
+
+        // Check if establishment already has an active boost
+        const activeBoost = await this.boostsRepository.findOne({
+            where: { 
+                establishment: { id: establishment.id },
+                type: BoostType.ESTABLISHMENT_PROFILE,
+                status: BoostStatus.ACTIVE 
+            },
+            relations: ['establishment'],
+            order: { createdAt: 'DESC' }
+        });
+
+        if (activeBoost && activeBoost.endAt && new Date(activeBoost.endAt) > new Date()) {
+            throw new BadRequestException(
+                `Your establishment already has an active boost until ${activeBoost.endAt.toLocaleDateString('pt-BR')}. Wait for it to expire before purchasing a new one.`
+            );
+        }
+
+        // Create billing on Abacate Pay
+        const billing = await this.abacatePayService.createBilling({
+            frequency: 'ONE_TIME',
+            methods: ['PIX'],
+            products: [
+                {
+                    externalId: product.externalId,
+                    name: product.name,
+                    description: `Establishment boost for ${establishment.name}`,
+                    quantity: 1,
+                    price: product.price,
+                },
+            ],
+            returnUrl: `${this.configService.get('FRONTEND_URL')}/dashboard/boosts/success`,
+            completionUrl: `${this.configService.get('FRONTEND_URL')}/dashboard/boosts/complete`,
+            metadata: {
+                establishmentId: establishment.id,
+                userId: userId,
+                boostType: boostType,
+            },
+        });
+
+        const pixQRCode = await this.abacatePayService.createPixQRCode(
+            product.price,
+            `boost_est_${establishment.id}_${Date.now()}`
+        );
+
+        // Create payment record
+        const payment = this.paymentsRepository.create({
+            amountCents: product.price.toString(),
+            currency: 'BRL',
+            provider: 'ABACATE_PAY',
+            status: PaymentStatus.PENDING,
+            billingId: billing.id,
+            pixQrCode: pixQRCode.brCode,
+            pixQrCodeBase64: pixQRCode.brCodeBase64,
+            paymentUrl: billing.url,
+            expiresAt: pixQRCode.expiresAt ? new Date(pixQRCode.expiresAt) : null,
+            metadata: {
+                boostType,
+                establishmentId: establishment.id,
+                pixId: pixQRCode.id,
+            },
+        });
+
+        const savedPayment = await this.paymentsRepository.save(payment);
+
+        // Create boost in pending state
+        const boost = this.boostsRepository.create({
+            type: BoostType.ESTABLISHMENT_PROFILE,
+            establishment: establishment,
+            durationDays: product.duration,
+            status: BoostStatus.PENDING,
+            paymentId: savedPayment.id,
+            boostTier: boostType,
+        });
+
+        await this.boostsRepository.save(boost);
+
+        const response = {
+            paymentId: savedPayment.id,
+            billingId: billing.id,
+            pixId: pixQRCode.id,
+            amount: product.price,
             pixQrCode: pixQRCode.brCode,
             pixQrCodeBase64: pixQRCode.brCodeBase64,
             paymentUrl: billing.url,
